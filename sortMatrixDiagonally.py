@@ -7,13 +7,17 @@ each matrix diagonal in ascending order and return the resulting matrix."""
 class Solution:
     from collections import defaultdict
     def diagonalSort(self, mat: List[List[int]]) -> List[List[int]]:
-        dic = defaultdict(list)
+        diagonal = defaultdict(list)
+        # Since the difference between the rows (m) and columns (n) remains constant within the same diagonal, we use this as a
+        #  key to keep track of diagonals and the values stored within them.
         for m in range(len(mat)):
             for n in range(len(mat[0])):
-                dic[m - n].append(mat[m][n])
-        for k in dic:
-            dic[k] = sorted(dic[k])
+                diagonal[m - n].append(mat[m][n])
+        # The values within the diagonal are sorted in ascending order
+        for k in diagonal:
+            diagonal[k] = sorted(diagonal[k])
+        # The sorted values are put back into the original array
         for m in range(len(mat)):
             for n in range(len(mat[0])):
-                mat[m][n] = dic[m - n].pop(0)
+                mat[m][n] = diagonal[m - n].pop(0)
         return mat
