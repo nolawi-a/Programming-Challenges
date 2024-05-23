@@ -1,23 +1,26 @@
 """
 Create a queue data structure that supports enqueue and dequeue operations, where 
-the queue is composed of subarrays with a maximum size of 5 elements each.
+the queue is composed of subarrays with a maximum size of n elements each.
 """
 
 import logging
 from collections import deque
+from enum import Enum
 
-class InvalidSubarraySize(Exception):
-    def __init__(self, message="Invalid subarray size. Subarray size must be an integer greater than 1."):
-        self.message = message
-        super().__init__(self.message)
+class Response(Enum):
+    SUCCESS = "SuccessResponse"
+    DATA = "DataResponse"
+    ERROR = "ErrorResponse"
 
 class QueueNode:
     def __init__(self, max_queue_size, next_node=None):
-        if not isinstance(max_queue_size, int):
-            raise TypeError("Max queue size provided is not an integer.")
-        if max_queue_size < 1:
-            raise InvalidSubarraySize()
-        self.max_q_size = max_queue_size
+        default_queue_size = 5
+        # check if provided queue size is valid
+        if not isinstance(max_queue_size, int) or max_queue_size < 1:   # if TypeError or ValueError
+            logging.error(f"Max queue size must be an integer greater than 0. Defaulting to {default_queue_size}")
+            self.max_q_size = default_queue_size
+        else:
+            self.max_q_size = max_queue_size
         self.next_node = next_node
         self.q = deque()
 
@@ -38,20 +41,19 @@ class QueueNode:
 
     def remove(self):
         if self.is_empty():
-            raise IndexError("Index out of range. Trying to remove from empty queue.")
+            logging.error("IndexError: Trying to remove from empty queue")
+            return {Response.ERROR: "Index out of range. Trying to remove from empty queue."}
         else:
-            return self.q.popleft()
+            return {Response.DATA: self.q.popleft()}
 
 class UnlimitedQueue:
     def __init__(self, subarray_size):
-        if not isinstance(subarray_size, int) or subarray_size < 1:
-            raise InvalidSubarraySize("Subarray size must be an integer greater than 1.")
         self.subarray_size = subarray_size
         self.curr_node = QueueNode(self.subarray_size)
         self.total_elements = 0
         self.unlimited_queue_head = self.curr_node
 
-    def enqueue(self, val):
+    def enqueue(self, val) -> bool:
         if self.curr_node.is_full():
             new_node = QueueNode(self.subarray_size)
             self.curr_node.next_node = new_node
@@ -66,12 +68,12 @@ class UnlimitedQueue:
     def dequeue(self):
         # check if UnlimitedQueue is completely empty
         if self.total_elements == 0:
-            raise IndexError("Index out of range. Trying to remove from empty queue.")
+            return {Response.ERROR: "IndexError. Trying to remove from empty queue."}
 
         if self.unlimited_queue_head.is_empty():
             # Should never be hitting this code, if we do, then we’re not correctly updating self.total_elements
             if not self.unlimited_queue_head.next_node:
-                raise IndexError("Index out of range. Trying to remove from empty queue.")
+                return {Response.ERROR: "IndexError. Trying to remove from empty queue."}
             else:
                 # detach head node as it’s empty
                 temp = self.unlimited_queue_head.next_node
@@ -79,25 +81,31 @@ class UnlimitedQueue:
                 self.unlimited_queue_head = temp
         
         self.total_elements -= 1
+        # attempt to remove element from node
         return self.unlimited_queue_head.remove()
 
+# testing
 if __name__ == "__main__":
-    uq = UnlimitedQueue('a')
+    uq = UnlimitedQueue(5)
         
     for i in range(1, 16):
         uq.enqueue(i)
 
     for _ in range(16):
-        try:
-            print(uq.dequeue())
-        except IndexError as ex:
-            logging.error(f"Error encountered while popping from unlimited queue: {ex}")
+        dequeue_resp = uq.dequeue()
+        if Response.DATA in dequeue_resp:
+            print(dequeue_resp[Response.DATA])
+        else:
+            print(dequeue_resp[Response.ERROR])
+
+    uq.enqueue(21)
             
     for i in range(0, 4):
         uq.enqueue(i)
         
     for _ in range(7):
-        try:
-            print(uq.dequeue())
-        except IndexError as ex:
-            logging.error(f"Error encountered while popping from unlimited queue: {ex}")
+        dequeue_resp = uq.dequeue()
+        if Response.DATA in dequeue_resp:
+            print(dequeue_resp[Response.DATA])
+        else:
+            print(dequeue_resp[Response.ERROR])
